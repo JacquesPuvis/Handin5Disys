@@ -114,7 +114,6 @@ func main() {
 	}
 	defer logFile.Close()
 
-	// Creates a new logger that writes to the file
 	logger := log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	listener, err := net.Listen("tcp", ":50051")

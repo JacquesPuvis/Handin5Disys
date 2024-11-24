@@ -42,18 +42,20 @@ func (n *Node) PlaceBid() {
 	var amount int32
 
 	if n.TimesBidded == 0 {
-		// Start bid amount will be between 0 and half of the node's balance
-		// Makes sure that the node doesn't bid all its money at first
+		/*the starting bid amount will be between 0 and half of the node's balance..
+		This makes sure that the node doesn't bid all its money at first, and the
+		auction doesn't end immedietly
+		*/
 		amount = randomIntBetween(0, n.Balance/2)
 	} else {
-		// Else bid amount will be between currentHighestBid and balance
+		//else bid amount will be between currentHighestBid and node's balance
 		amount = randomIntBetween(n.CurrentHighestBid, n.CurrentHighestBid+100)
 	}
 	resp, err := n.client.PlaceBid(context.Background(), &proto.BidRequest{Amount: amount, NodeID: n.NodeID})
 	if err != nil {
 		log.Fatalf("failed to place bid")
 	}
-	// Switch case for the ack response
+	//for the ack response
 	switch resp.Ack {
 	case proto.AckStatus_SUCCESS:
 		n.TimesBidded++
@@ -83,7 +85,7 @@ func (n *Node) GetIsAuctionOngoing() bool {
 	if err != nil {
 		log.Fatalf("failed to get auction ongoing status: %v", err)
 	}
-	// Set the auction status based on the response
+	//sets the auction status based on the response
 	n.isAuctionOngoing = resp.GetAuctionStillGoing()
 	return n.isAuctionOngoing
 }
@@ -109,14 +111,13 @@ func (n *Node) GetResult() {
 }
 
 func (n *Node) ConnectToPrimary(primaryAddress string) error {
-	// Retry logic for connecting to the primary server
 	var err error
 	n.conn, err = grpc.Dial(primaryAddress, grpc.WithInsecure())
 	if err != nil {
 		return fmt.Errorf("failed to connect to primary server: %v", err)
 	}
-
-	n.client = proto.NewBiddingServiceClient(n.conn) // Initialize the client
+	//Initializes the client
+	n.client = proto.NewBiddingServiceClient(n.conn)
 	if n.client == nil {
 		return fmt.Errorf("failed to initialize client after connecting to server")
 	}
@@ -127,15 +128,14 @@ func (n *Node) ConnectToPrimary(primaryAddress string) error {
 
 
 func (n *Node) ReconnectToPrimaryOnFailure(primaryAddress string) {
-	// Retry indefinitely to reconnect to the new primary server
+	//retries indefinitely (until connected) to reconnect to the new primary server
 	for {
 		err := n.ConnectToPrimary(primaryAddress)
 		if err != nil {
 			log.Printf("Failed to connect to primary server at %s, retrying...\n", primaryAddress)
-			time.Sleep(2 * time.Second) // Wait before retrying
+			time.Sleep(2 * time.Second)
 			continue
 		}
-		// Once connected, break out of the loop and proceed
 		break
 	}
 }
@@ -151,14 +151,13 @@ func (n *Node) PingPrimary() bool {
 	if err != nil {
 		st, ok := status.FromError(err)
 		if ok && st.Code() == codes.Unavailable {
-			// If the primary server is unavailable, return false
+			//returns false if the primary server is unavailable
 			fmt.Println("Primary server is unavailable.")
 			return false
 		}
 		log.Printf("Ping error: %v", err)
 		return false
 	}
-	// If no error, the server is alive
 	return true
 }
 
@@ -179,8 +178,8 @@ func (node *Node) ping(replicaServerAddress string, err error) {
 func main() {
 	
 	clientID := os.Args[1]
-	primaryServerAddress := "localhost:50051" // This should be the address of the current primary server
-	replicaServerAddress := "localhost:50052"  // Address of the replica server
+	primaryServerAddress := "localhost:50051" 
+	replicaServerAddress := "localhost:50052"  
 	
 	logFile, err := os.OpenFile("../serverLogUser.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
     if err != nil {
@@ -188,7 +187,6 @@ func main() {
     }
     defer logFile.Close()
 
-    // Use `=` if `logger` was already declared earlier
     logger := log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	node := &Node{
@@ -197,12 +195,11 @@ func main() {
 		TimesBidded: 0,
 		logger:          logger,
 	}
-
-	// Initially, try to connect to the primary server
+	//Tries initially to connect to the primary server
 	err = node.ConnectToPrimary(primaryServerAddress)
 	if err != nil {
 		log.Printf("Failed to connect to primary server: %v", err)
-		// If primary connection fails, attempt to connect to the replica server
+		//tries to connect to the replica server if primary connection fails
 		err = node.ConnectToPrimary(replicaServerAddress)
 		if err != nil {
 			log.Fatalf("Failed to connect to both primary and replica servers: %v", err)
@@ -235,7 +232,6 @@ func main() {
 			node.ping(replicaServerAddress, err)
 
 
-			// Place a bid if the current bid is less than or equal to the balance
 			node.ping(replicaServerAddress, err)
 
 			if node.CurrentHighestBid < node.Balance {
@@ -246,10 +242,6 @@ func main() {
 			}
 			node.ping(replicaServerAddress, err)
 
-
-			// Simulate connection failure scenario
-
-			// Wait for a few seconds before retrying
 			time.Sleep(4 * time.Second)
 		} else {
 			break

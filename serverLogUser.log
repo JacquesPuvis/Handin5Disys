@@ -9,6 +9,9 @@ INFO: 2024/11/24 15:26:34 node.go:245: Placing bid: 143, NodeID: B
 INFO: 2024/11/24 15:26:34 node.go:245: Placing bid: 158, NodeID: A
 INFO: 2024/11/24 15:26:38 node.go:245: Placing bid: 176, NodeID: B
 INFO: 2024/11/24 15:26:38 node.go:245: Placing bid: 199, NodeID: A
+
+THIS IS WHERE WE ARE ARTIFICIALLY "CRASHING" THE SERVER BY KILLING THE PROCESS
+
 INFO: 2024/11/24 15:26:40 serverReplica.go:41: Primary not responding.
 INFO: 2024/11/24 15:26:40 serverReplica.go:47: Retrying... (1/3)
 INFO: 2024/11/24 15:26:42 serverReplica.go:41: Primary not responding.
